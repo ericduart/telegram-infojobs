@@ -1,5 +1,5 @@
-import { Telegraf } from 'telegraf'
-// import { message } from 'telegraf/filters'
+import { Telegraf, Context } from 'telegraf'
+import { message } from 'telegraf/filters'
 import { TELEGRAM_TOKEN, getUserId } from './config/config'
 import getSkills from './api/infojobs'
 import { CountSkills } from './types'
@@ -29,40 +29,7 @@ const checkUserId = (userId: number): Boolean => {
   return typeof getUserId() !== 'undefined' && userId === getUserId()
 }
 
-const bot = new Telegraf(typeof TELEGRAM_TOKEN !== 'undefined' ? TELEGRAM_TOKEN : '')
-
-bot.use(async (ctx, next) => {
-  if (typeof ctx.message?.from.id !== 'undefined' && checkUserId(ctx.message.from.id) === true) {
-    await next()
-  } else {
-    await ctx.reply('Este bot es privado')
-  }
-})
-
-bot.start(async ctx => {
-  if (checkUserId(ctx.message.from.id) === false) {
-    await ctx.reply('Lo siento, este bot es privado.')
-    return
-  }
-
-  await ctx.reply('en que te ayudo', {
-    reply_markup: {
-      inline_keyboard: [[
-        { text: '¿Qué me permite hacer este bot?', callback_data: 'get-info' }
-      ]]
-    }
-  })
-})
-
-bot.help(async ctx => {
-  await ctx.reply('Comandos disponibles:\n\n/skills -> Devuelve el top 10 skills más utilizadas.')
-})
-
-bot.on('message', async ctx => {
-  if (checkUserId(ctx.message.from.id) === false) await ctx.reply('Lo siento, este bot es privado.')
-})
-
-bot.command('/skills', async ctx => {
+const sendSkills = async (ctx: Context): Promise<undefined> => {
   await ctx.reply('Cargando datos...')
 
   const res = await getSkills()
@@ -74,15 +41,55 @@ bot.command('/skills', async ctx => {
   let message = ''
 
   rankingTop.forEach((el, index) => {
-    message += `[+] ${index + 1}\nSkill: ${el.skill}\nNúmero de ofertas: ${el.amount}\n----------------------------------------------\n`
+    message += `${index + 1} ${el.skill}\nNúmero de ofertas: ${el.amount}\n----------------------------------------------\n`
   })
 
   await ctx.reply(message)
+  return undefined
+}
+
+const bot = new Telegraf(typeof TELEGRAM_TOKEN !== 'undefined' ? TELEGRAM_TOKEN : '')
+
+bot.use(async (ctx, next) => {
+  const userId = ctx.message?.from.id !== undefined ? ctx.message?.from.id : ctx.callbackQuery?.from.id
+
+  if (typeof userId !== 'undefined' && checkUserId(userId) === true) {
+    await next()
+  } else {
+    await ctx.reply('Lo siento, este bot es privado.')
+  }
+})
+
+bot.start(async ctx => {
+  await ctx.reply('En que te puedo ayudar?', {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: '¿Qué puedes hacer?', callback_data: 'get-info' },
+        { text: '¿Quién hizo este bot?', callback_data: 'get-dev' }
+      ]]
+    }
+  })
+})
+
+bot.help(async ctx => {
+  await ctx.reply('Este bot te permitirá saber qué skills són las más utilizadas actualmente en las diferentes ofertas de Infojobs.\n\n/skills -> Top 10 skills')
 })
 
 bot.action('get-info', async ctx => {
-  await ctx.editMessageReplyMarkup(undefined)
-  await ctx.editMessageText('Este bot te permitirá saber qué skills són las más utilizadas actualmente en las diferentes ofertas de Infojobs\n\n/skills -> Top 10 skills')
+  await ctx.editMessageText(`Hola ${typeof ctx !== 'undefined' && typeof ctx.from !== 'undefined' ? ctx.from.first_name : ''}, esto es lo que puedo hacer.\n\n/skills -> Top 10 skills más utilizadas.`)
+})
+
+bot.action('get-dev', async ctx => {
+  await ctx.editMessageText(`Hola ${typeof ctx !== 'undefined' && typeof ctx.from !== 'undefined' ? ctx.from.first_name : ''}, aquí lo tienes.\n\n- https://github.com/ericduart`)
+})
+
+bot.on(message('text'), async ctx => {
+  if (ctx.update.message.text.includes('/skills')) {
+    await sendSkills(ctx)
+    return
+  }
+
+  await ctx.reply(`Hola ${ctx.from.first_name}, esto es lo que puedo hacer.\n\n/skills -> Top 10 skills más utilizadas.`)
 })
 
 bot.launch().catch(err => {

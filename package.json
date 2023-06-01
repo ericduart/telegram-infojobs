@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "start": "node build/index.ts",
+    "start": "node build/index.js",
     "dev": "ts-node-dev src/index.ts",
-    "tsc": "tsc"
+    "build": "tsc"
   },
   "author": "",
   "license": "ISC",
