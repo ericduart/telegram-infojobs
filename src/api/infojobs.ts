@@ -1,6 +1,7 @@
 import { Offers, GeneralOffers, DetailedOffer, OfferWithSkills } from './types'
+import { INFOJOBS_TOKEN } from '../config/config'
 const headers = {
-  Authorization: 'Basic NDYxOWI0OWZkNTA1NDcxYTg2MTYyNTEyOTliYzAxNzE6REkxVmluVEt1Z0hyd1ZxQXZCWHlXQ3VjNFdjMGVVQUt5d3YzZ0dCOVFVbVNlTVFjZHI='
+  Authorization: `Basic ${INFOJOBS_TOKEN}`
 }
 
 export const getGeneralOffers = async (page: number, totalResults: number): Promise<GeneralOffers[]> => {
