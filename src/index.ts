@@ -1,6 +1,6 @@
 import { Telegraf, Context } from 'telegraf'
 import { message } from 'telegraf/filters'
-import { TELEGRAM_TOKEN, getUserId } from './config/config'
+import { TELEGRAM_TOKEN } from './config/config'
 import getSkills from './api/infojobs'
 import { CountSkills } from './types'
 import { OfferWithSkills } from './api/types'
@@ -25,10 +25,6 @@ function getRankingOfSkills (arrSkills: OfferWithSkills[]): CountSkills[] {
   return totalSkills
 }
 
-const checkUserId = (userId: number): Boolean => {
-  return typeof getUserId() !== 'undefined' && userId === getUserId()
-}
-
 const sendSkills = async (ctx: Context): Promise<undefined> => {
   await ctx.reply('Cargando datos...')
 
@@ -50,18 +46,8 @@ const sendSkills = async (ctx: Context): Promise<undefined> => {
 
 const bot = new Telegraf(typeof TELEGRAM_TOKEN !== 'undefined' ? TELEGRAM_TOKEN : '')
 
-bot.use(async (ctx, next) => {
-  const userId = ctx.message?.from.id !== undefined ? ctx.message?.from.id : ctx.callbackQuery?.from.id
-
-  if (typeof userId !== 'undefined' && checkUserId(userId) === true) {
-    await next()
-  } else {
-    await ctx.reply('Lo siento, este bot es privado.')
-  }
-})
-
 bot.start(async ctx => {
-  await ctx.reply('En que te puedo ayudar?', {
+  await ctx.reply(`Buenas ${ctx.update.message.from.first_name}, ¿en que te puedo ayudar?`, {
     reply_markup: {
       inline_keyboard: [[
         { text: '¿Qué puedes hacer?', callback_data: 'get-info' },
